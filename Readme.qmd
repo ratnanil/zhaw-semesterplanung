@@ -49,40 +49,21 @@ events <- fs26 |>
     # description = glue("{Topic}\n{Comment}", .na = "")
   )
 
-# Create iCalendar events
-ic_events <- events |>
-  rowwise() |>
+# Create iCalendar from dataframe directly
+cal <- events |>
   mutate(
-    event = list(ic_event(
-      start_time = date_from,
-      end_time = date_to,
-      summary = summary,
-      # event_properties = c(description = description)
-    ))
+    UID = paste0(Studiengang, "_", Modul, "_W", Semesterwoche, "@zhaw-semesterplanung")
   ) |>
-  pull(event)
+  select(
+    UID,
+    DTSTART = date_from,
+    DTEND = date_to,
+    SUMMARY = summary
+  ) |>
+  ical()
 
-
-
-ic_events
-# Combine all events into a single calendar
-
-cal <- lapply(ic_events, ical)
-
-names(cal) <- paste0(paste(events$Modul, events$Semesterwoche, events$Topic, sep = "_"), ".ics") |> 
-  str_replace_all(" ","_") |> 
-  str_replace_all("/","_")
-
-# cal <- ical(ic_events[[1]])
-
-# Write to .ics file
-
-imap(cal, \(x,y){
-  
-  # browser()
-  outfile <- file.path("ics", y)
-  ic_write(x, outfile)
-})
+# Write to single .ics file
+ic_write(cal, "calendar.ics")
 
 
 
