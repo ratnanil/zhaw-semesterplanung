@@ -1,0 +1,12 @@
+# R specific files
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# LibreOffice lock files
+.~lock.*
+
+# Quarto output
+Readme_files/
+/.quarto/
