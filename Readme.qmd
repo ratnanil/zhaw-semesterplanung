@@ -5,6 +5,7 @@ format: gfm
 
 
 FS
+
 - Circular Economy Management (Di Nachmittag)
 - Patterns and Trends (Mi Vormittag, 2. Quartal)
 - Remote Sensing UI (Montag Vormittag, 2 Einheiten)
@@ -12,6 +13,7 @@ FS
 
 
 HS
+
 - Research Methods (Mo / Di Vormittag)
 - ADLS Image Processing for Remote Sensing
 - ADLS GIScience and Geodatabases
@@ -24,6 +26,7 @@ library(readODS)
 library(calendar)
 library(tidyr)
 library(dplyr)
+library(hms)
 library(lubridate)
 library(ISOweek)
 library(glue)
@@ -43,8 +46,8 @@ events <- fs26 |>
     Kalenderwoche = str_pad(Kalenderwoche, 2, pad = "0"),
     isoweekdate = glue("{year}-W{Kalenderwoche}-{Weekday}"),
     date = ISOweek2date(isoweekdate),
-    date_from = as.POSIXct(paste(date, Von), tz = "CET"),
-    date_to = as.POSIXct(paste(date, Bis), tz = "CET"),
+    date_from = as.POSIXct(paste(date, as.character(Von)), tz = "CET"),
+    date_to = as.POSIXct(paste(date, as.character(Bis)), tz = "CET"),
     summary = glue("{Studiengang}: {Modul} ({Topic})")
     # description = glue("{Topic}\n{Comment}", .na = "")
   )
