@@ -53,20 +53,38 @@ events <- fs26 |>
   )
 
 # Create iCalendar from dataframe directly
+# Convert to UTC for better calendar app compatibility
 cal <- events |>
   mutate(
-    UID = paste0(Studiengang, "_", Modul, "_W", Semesterwoche, "@zhaw-semesterplanung")
+    UID = paste0(Studiengang, "_", Modul, "_W", Semesterwoche, "@zhaw-semesterplanung"),
+    DTSTART = with_tz(date_from, "UTC"),
+    DTEND = with_tz(date_to, "UTC"),
+    DTSTAMP = with_tz(Sys.time(), "UTC")
   ) |>
   select(
     UID,
-    DTSTART = date_from,
-    DTEND = date_to,
+    DTSTART,
+    DTEND,
+    DTSTAMP,
     SUMMARY = summary
   ) |>
   ical()
 
 # Write to single .ics file
 ic_write(cal, "calendar.ics")
+
+# Post-process to fix formatting issues
+ics_lines <- readLines("calendar.ics")
+
+# Fix DTSTAMP format and add Z suffix to UTC times
+ics_lines <- ics_lines |>
+  # Fix DTSTAMP: convert "2025-11-18 14:58:49" to "20251118T145849Z"
+  str_replace("^DTSTAMP:(.{4})-(.{2})-(.{2}) (.{2}):(.{2}):(.{2})", "DTSTAMP:\\1\\2\\3T\\4\\5\\6Z") |>
+  # Add Z suffix to DTSTART and DTEND for UTC times
+  str_replace("^(DTSTART:[0-9]{8}T[0-9]{6})$", "\\1Z") |>
+  str_replace("^(DTEND:[0-9]{8}T[0-9]{6})$", "\\1Z")
+
+writeLines(ics_lines, "calendar.ics")
 
 
 
