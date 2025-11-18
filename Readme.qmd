@@ -4,7 +4,7 @@ format: gfm
 ---
 
 
-FS
+ FS
 
 - Circular Economy Management (Di Nachmittag)
 - Patterns and Trends (Mi Vormittag, 2. Quartal)
@@ -12,7 +12,7 @@ FS
 - ADLS Spatiotemproral DataScience (Di Vormittag)
 
 
-HS
+ HS
 
 - Research Methods (Mo / Di Vormittag)
 - ADLS Image Processing for Remote Sensing
@@ -22,6 +22,10 @@ HS
 
 
 ```{r}
+#| message: false
+#| warning: false
+
+# Load required libraries
 library(readODS)
 library(calendar)
 library(tidyr)
@@ -31,68 +35,14 @@ library(lubridate)
 library(ISOweek)
 library(glue)
 library(stringr)
-library(purrr)
-ISOweek2date(weekdate = "2025-W47-2")
 
-year <- 2026
-fs26 <- read_ods("Modultage.ods", "FS26") |> 
-  fill(Studiengang, Modul, Weekday) |> 
-  filter(is.na(Ex)) |> 
-  select(-Ex)
+# Source calendar functions
+source("R/calendar_functions.R")
 
+# Process the FS26 sheet
+ics_file <- process_sheet_to_ics("Modultage.ods", "FS26")
 
-events <- fs26 |>
-  mutate(
-    Kalenderwoche = str_pad(Kalenderwoche, 2, pad = "0"),
-    isoweekdate = glue("{year}-W{Kalenderwoche}-{Weekday}"),
-    date = ISOweek2date(isoweekdate),
-    date_from = as.POSIXct(paste(date, as.character(Von)), tz = "CET"),
-    date_to = as.POSIXct(paste(date, as.character(Bis)), tz = "CET"),
-    summary = glue("{Studiengang}: {Modul} ({Topic})")
-    # description = glue("{Topic}\n{Comment}", .na = "")
-  )
-
-# Create iCalendar from dataframe directly
-# Convert to UTC for better calendar app compatibility
-cal <- events |>
-  mutate(
-    UID = paste0(Studiengang, "_", Modul, "_W", Semesterwoche, "@zhaw-semesterplanung"),
-    DTSTART = with_tz(date_from, "UTC"),
-    DTEND = with_tz(date_to, "UTC"),
-    DTSTAMP = with_tz(Sys.time(), "UTC")
-  ) |>
-  select(
-    UID,
-    DTSTART,
-    DTEND,
-    DTSTAMP,
-    SUMMARY = summary
-  ) |>
-  ical()
-
-# Write to single .ics file
-ic_write(cal, "calendar.ics")
-
-# Post-process to fix formatting issues
-ics_lines <- readLines("calendar.ics")
-
-# Fix DTSTAMP format and add Z suffix to UTC times
-ics_lines <- ics_lines |>
-  # Fix DTSTAMP: convert "2025-11-18 14:58:49" to "20251118T145849Z"
-  str_replace("^DTSTAMP:(.{4})-(.{2})-(.{2}) (.{2}):(.{2}):(.{2})", "DTSTAMP:\\1\\2\\3T\\4\\5\\6Z") |>
-  # Add Z suffix to DTSTART and DTEND for UTC times
-  str_replace("^(DTSTART:[0-9]{8}T[0-9]{6})$", "\\1Z") |>
-  str_replace("^(DTEND:[0-9]{8}T[0-9]{6})$", "\\1Z")
-
-writeLines(ics_lines, "calendar.ics")
-
-
-
-
-
+# Copy to root as calendar.ics for backward compatibility
+file.copy(ics_file, "calendar.ics", overwrite = TRUE)
 
 ```
-
-
-
-

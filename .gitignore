@@ -9,4 +9,8 @@
 
 # Quarto output
 Readme_files/
+Readme.html
 /.quarto/
+
+# Test files
+test*.ics
