@@ -368,67 +368,26 @@ display: none;
 <li>UI Geospatial Computing</li>
 <li>ADLS DataLab</li>
 </ul>
-<pre class="r"><code>library(readODS)
+<pre class="r"><code># Load required libraries
+library(readODS)
 library(calendar)
 library(tidyr)
-library(dplyr)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;dplyr&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>library(hms)
-library(lubridate)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;lubridate&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:hms&#39;:
-## 
-##     hms</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     date, intersect, setdiff, union</code></pre>
-<pre class="r"><code>library(ISOweek)
+library(dplyr)
+library(hms)
+library(lubridate)
+library(ISOweek)
 library(glue)
 library(stringr)
-library(purrr)
-ISOweek2date(weekdate = &quot;2025-W47-2&quot;)</code></pre>
-<pre><code>## [1] &quot;2025-11-18&quot;</code></pre>
-<pre class="r"><code>year &lt;- 2026
-fs26 &lt;- read_ods(&quot;Modultage.ods&quot;, &quot;FS26&quot;) |&gt; 
-  fill(Studiengang, Modul, Weekday) |&gt; 
-  filter(is.na(Ex)) |&gt; 
-  select(-Ex)
 
+# Source calendar functions
+source(&quot;R/calendar_functions.R&quot;)
 
-events &lt;- fs26 |&gt;
-  mutate(
-    Kalenderwoche = str_pad(Kalenderwoche, 2, pad = &quot;0&quot;),
-    isoweekdate = glue(&quot;{year}-W{Kalenderwoche}-{Weekday}&quot;),
-    date = ISOweek2date(isoweekdate),
-    date_from = as.POSIXct(paste(date, as.character(Von)), tz = &quot;CET&quot;),
-    date_to = as.POSIXct(paste(date, as.character(Bis)), tz = &quot;CET&quot;),
-    summary = glue(&quot;{Studiengang}: {Modul} ({Topic})&quot;)
-    # description = glue(&quot;{Topic}\n{Comment}&quot;, .na = &quot;&quot;)
-  )
+# Process the FS26 sheet
+ics_file &lt;- process_sheet_to_ics(&quot;Modultage.ods&quot;, &quot;FS26&quot;)
 
-# Create iCalendar from dataframe directly
-cal &lt;- events |&gt;
-  mutate(
-    UID = paste0(Studiengang, &quot;_&quot;, Modul, &quot;_W&quot;, Semesterwoche, &quot;@zhaw-semesterplanung&quot;)
-  ) |&gt;
-  select(
-    UID,
-    DTSTART = date_from,
-    DTEND = date_to,
-    SUMMARY = summary
-  ) |&gt;
-  ical()
-
-# Write to single .ics file
-ic_write(cal, &quot;calendar.ics&quot;)</code></pre>
+# Copy to root as calendar.ics for backward compatibility
+file.copy(ics_file, &quot;calendar.ics&quot;, overwrite = TRUE)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
 
 
 
